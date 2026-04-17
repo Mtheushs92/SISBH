@@ -124,9 +124,9 @@ export function Dashboard() {
           <CardTitle>Comparativo de Banco de Horas (em horas)</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[350px] w-full mt-4 min-h-[350px]">
+          <div className="w-full mt-4" style={{ height: '350px' }}>
             {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%" minHeight={350} minWidth={100}>
+              <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={chartData} margin={{ top: 20, right: 20, left: -10, bottom: 60 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                   <XAxis 

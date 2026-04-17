@@ -36,7 +36,8 @@ export function TimeBankProvider({ children }: { children: React.ReactNode }) {
           const formatted = data.map((d: any) => ({
             ...d,
             id: String(d.id || '').trim(),
-            employeeId: String(d.employeeId || '').trim(),
+            employeeId: String(d.employeeId || d.employeeld || d.employeeID || '').trim(), // Handle sheet typo
+            date: String(d.date || '').substring(0, 10), // Normalize ISO to YYYY-MM-DD
             bhPlus: Number(d.bhPlus || 0),
             bhMinus: Number(d.bhMinus || 0),
           }));
