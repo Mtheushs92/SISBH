@@ -55,6 +55,8 @@ export function TimeBankProvider({ children }: { children: React.ReactNode }) {
         if (Array.isArray(data)) {
           const formatted = data.map((d: any) => ({
             ...d,
+            id: String(d.id || ''),
+            employeeId: String(d.employeeId || ''),
             bhPlus: Number(d.bhPlus || 0),
             bhMinus: Number(d.bhMinus || 0),
           }));
@@ -141,7 +143,7 @@ export function TimeBankProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getEmployeeBalance = (employeeId: string, startDate?: string, endDate?: string) => {
-    let filteredLogs = logs.filter(l => l.employeeId === employeeId);
+    let filteredLogs = logs.filter(l => String(l.employeeId) === String(employeeId));
     
     if (startDate) {
       filteredLogs = filteredLogs.filter(l => l.date >= startDate);
