@@ -17,72 +17,46 @@ interface TimeBankContextType {
 const TimeBankContext = createContext<TimeBankContextType | undefined>(undefined);
 
 export function TimeBankProvider({ children }: { children: React.ReactNode }) {
-  const [employees, setEmployees] = useState<Employee[]>(() => {
-    try {
-      const saved = localStorage.getItem('timebank_employees');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return [];
-  });
-
-  const [logs, setLogs] = useState<TimeLog[]>(() => {
-    try {
-      const saved = localStorage.getItem('timebank_logs');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return [];
-  });
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [logs, setLogs] = useState<TimeLog[]>([]);
   
   const [isLoadingLogs, setIsLoadingLogs] = useState(true);
-
-  // Sync state to local storage to prevent completely empty views during page reloads
-  useEffect(() => {
-    localStorage.setItem('timebank_employees', JSON.stringify(employees));
-  }, [employees]);
-
-  useEffect(() => {
-    localStorage.setItem('timebank_logs', JSON.stringify(logs));
-  }, [logs]);
 
   // Load from App Script API
   useEffect(() => {
     setIsLoadingLogs(true);
+    // Add cache buster to ensure it never catches a stale empty response
+    const noCacheToken = Date.now();
     
     // Busca Lançamentos
-    fetch(`${APP_SCRIPT_URL}?action=getLogs`)
+    fetch(`${APP_SCRIPT_URL}?action=getLogs&t=${noCacheToken}`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
           const formatted = data.map((d: any) => ({
             ...d,
-            id: String(d.id || ''),
-            employeeId: String(d.employeeId || ''),
+            id: String(d.id || '').trim(),
+            employeeId: String(d.employeeId || '').trim(),
             bhPlus: Number(d.bhPlus || 0),
             bhMinus: Number(d.bhMinus || 0),
           }));
-          // Proteção para não sobrescrever dados locais se a planilha estiver recém criada e vazia, mas já tivermos logs locais (prevenção de perda de cache)
-          if (data.length > 0) {
-             setLogs(formatted);
-          }
+          setLogs(formatted); // Sempre seta o que vier da nuvem (mesmo se vazio)
         }
       })
       .catch(err => console.error("Erro ao conectar Google Sheets (Logs):", err))
       .finally(() => setIsLoadingLogs(false));
 
     // Busca Servidores
-    fetch(`${APP_SCRIPT_URL}?action=getEmployees`)
+    fetch(`${APP_SCRIPT_URL}?action=getEmployees&t=${noCacheToken}`)
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           const formattedEmps = data.map((d: any) => ({
             ...d,
-            id: String(d.id || ''), 
-            name: String(d.name || 'SERVIDOR SEM NOME')
+            id: String(d.id || '').trim(), 
+            name: String(d.name || 'SERVIDOR SEM NOME').trim()
           }));
-          setEmployees(formattedEmps);
-        } else {
-          // If sheet is empty, clear local storage ghosts
-          setEmployees([]);
+          setEmployees(formattedEmps); // Sempre seta o que vier da nuvem (mesmo se vazio)
         }
       })
       .catch(err => console.error("Erro ao conectar Google Sheets (Servidores):", err));
@@ -143,7 +117,7 @@ export function TimeBankProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getEmployeeBalance = (employeeId: string, startDate?: string, endDate?: string) => {
-    let filteredLogs = logs.filter(l => String(l.employeeId) === String(employeeId));
+    let filteredLogs = logs.filter(l => String(l.employeeId).trim() === String(employeeId).trim());
     
     if (startDate) {
       filteredLogs = filteredLogs.filter(l => l.date >= startDate);
